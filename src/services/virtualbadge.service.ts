@@ -16,6 +16,7 @@ type IssueVirtualBadgeResult = {
     raw: unknown;
 };
 
+
 const api = axios.create({
     baseURL: process.env.VIRTUALBADGE_API_BASE_URL,
     headers: {
@@ -26,7 +27,6 @@ const api = axios.create({
 
 export const getVirtualBadgeTemplateId = (tier: string): string => {
     const map: Record<string, string | undefined> = {
-        "Global Potential": process.env.VIRTUALBADGE_TEMPLATE_GLOBAL_POTENTIAL,
         "Global Talent": process.env.VIRTUALBADGE_TEMPLATE_GLOBAL_TALENT,
         "Global Leader": process.env.VIRTUALBADGE_TEMPLATE_GLOBAL_LEADER,
         "Global Champion": process.env.VIRTUALBADGE_TEMPLATE_GLOBAL_CHAMPION,
@@ -61,13 +61,14 @@ export const issueVirtualBadge = async (
                 email: input.email,
                 full_name: input.fullName,
 
-                credential_name: `Deel Global Certification - ${input.metadata?.tier}`,
+                credential_name: `Deel Global Badge - ${input.metadata?.tier}`,
 
                 issue_date: new Date().toISOString().split("T")[0],
 
                 dynamic_fields: {
-                    score: String(input.metadata?.score),
+                    score: String(input.metadata?.score ?? ""),
                     tier: input.metadata?.tier,
+                    status: input.metadata?.status,
                 },
 
                 metadata: {
@@ -83,7 +84,7 @@ export const issueVirtualBadge = async (
     const data = response.data;
 
     const recipient = data?.data?.[0];
-console.log(recipient)
+    
     return {
         recipientId: recipient?.id ?? null,
         certificateId: recipient?.certificate ?? null,

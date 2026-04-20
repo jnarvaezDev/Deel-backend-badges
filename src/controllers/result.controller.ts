@@ -1,75 +1,81 @@
 import { Request, Response } from "express";
 import pool from "../db";
-import { questions } from "../data/questions";
-import { calculateTier } from "../utils/scoring";
 import {
   getVirtualBadgeTemplateId,
   issueVirtualBadge,
 } from "../services/virtualbadge.service";
 
-type SubmittedAnswer = {
-  questionId: number;
-  optionLabel: string;
-};
-
 export const submitResults = async (req: Request, res: Response) => {
+
   try {
-    const { answers, name, email } = req.body as {
-      answers?: SubmittedAnswer[];
+    const {
+      name,
+      email,
+      badge,
+      score,
+      maxScore,
+      reason,
+    } = req.body as {
       name?: string;
       email?: string;
+      badge?: "talent" | "champion" | "leader" | "none";
+      score?: number;
+      maxScore?: number;
+      reason?: string;
     };
 
-    if (!answers || !Array.isArray(answers)) {
-      return res.status(400).json({ message: "answers is required" });
-    }
-
+    //VALIDACIONES
     if (!email) {
       return res.status(400).json({ message: "email is required" });
     }
 
-    if (answers.length !== questions.length) {
-      return res.status(400).json({ message: "All questions must be answered" });
+    if (!badge) {
+      return res.status(400).json({ message: "badge is required" });
     }
 
-    let totalScore = 0;
+    /**
+     *MAPEO DE BADGE → TIER
+     */
+    const badgeToTierMap: Record<string, string | null> = {
+      talent: "Global Talent",
+      champion: "Global Champion",
+      leader: "Global Leader",
+      none: null,
+    };
 
-    for (const question of questions) {
-      const submitted = answers.find((a) => a.questionId === question.id);
+    const tier = badgeToTierMap[badge];
 
-      if (!submitted) {
-        return res
-          .status(400)
-          .json({ message: `Missing answer for question ${question.id}` });
-      }
+    /**
+     *VirtualBadge
+     */
+    let vb = {
+      recipientId: null as string | null,
+      certificateId: null as string | null,
+      validationUrl: null as string | null,
+      raw: null as unknown,
+    };
 
-      const selectedOption = question.options.find(
-        (opt) => opt.label === submitted.optionLabel
-      );
+    //SOLO crea badge si aplica
+    if (badge !== "none" && tier) {
+      const templateId = getVirtualBadgeTemplateId(tier);
 
-      if (!selectedOption) {
-        return res
-          .status(400)
-          .json({ message: `Invalid option for question ${question.id}` });
-      }
-
-      totalScore += selectedOption.points;
+      vb = await issueVirtualBadge({
+        templateId,
+        email,
+        fullName: name,
+        metadata: {
+          score,
+          maxScore,
+          badge,
+          tier,
+          reason,
+        },
+      });
     }
 
-    const tier = calculateTier(totalScore);
-    const templateId = getVirtualBadgeTemplateId(tier);
-
-    const vb = await issueVirtualBadge({
-      templateId,
-      email,
-      fullName: name,
-      metadata: {
-        score: totalScore,
-        tier,
-        answers,
-      },
-    });
-
+    /**
+     *DB
+     */
     const resultDb = await pool.query(
       `
       INSERT INTO results (
@@ -82,9 +88,14 @@ export const submitResults = async (req: Request, res: Response) => {
       [
         name ?? null,
         email,
-        totalScore,
+        score ?? null,
         tier,
-        JSON.stringify(answers),
+        JSON.stringify({
+          badge,
+          score,
+          maxScore,
+          reason,
+        }),
         vb.recipientId,
         vb.certificateId,
         vb.validationUrl,
@@ -94,19 +105,61 @@ export const submitResults = async (req: Request, res: Response) => {
     );
 
     const insertedId = resultDb.rows?.[0]?.id;
+
     if (!insertedId) {
       return res.status(500).json({ message: "Failed to save result" });
     }
 
+    /**
+     *RESPONSE FINAL
+     */
     return res.status(200).json({
       id: insertedId,
-      score: totalScore,
+      /*score,*/
       tier,
+      /*status: badge === "none" ? "no_badge" : "badge",*/
+      /*reason,*/
       credentialUrl: vb.validationUrl,
-      issuedBy: "virtualbadge",
+      issuedBy: vb.validationUrl ? "virtualbadge" : null,
     });
   } catch (error) {
     console.error("submitResults error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getUserBadges = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.query as { email?: string };
+
+    if (!email) {
+      return res.status(400).json({ message: "email is required" });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT 
+        id,
+        name,
+        email,
+        score,
+        tier,
+        vb_validation_url,
+        created_at
+      FROM results
+      WHERE email = $1
+      AND tier IS NOT NULL
+      ORDER BY created_at DESC
+      `,
+      [email]
+    );
+
+    return res.status(200).json({
+      count: result.rows.length,
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("getUserBadges error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
