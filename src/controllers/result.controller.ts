@@ -15,6 +15,7 @@ export const submitResults = async (req: Request, res: Response) => {
       score,
       maxScore,
       reason,
+      answers
     } = req.body as {
       name?: string;
       email?: string;
@@ -22,6 +23,7 @@ export const submitResults = async (req: Request, res: Response) => {
       score?: number;
       maxScore?: number;
       reason?: string;
+      answers?: Record<string, any>;
     };
 
     //VALIDACIONES
@@ -95,6 +97,7 @@ export const submitResults = async (req: Request, res: Response) => {
           score,
           maxScore,
           reason,
+          answers
         }),
         vb.recipientId,
         vb.certificateId,
