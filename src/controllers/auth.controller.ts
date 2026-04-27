@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import pool from "../db";
 import { getAccessToken, getUserProfile } from "../services/linkedin.service";
 
 export const linkedinLogin = (req: Request, res: Response) => {
@@ -20,7 +21,15 @@ export const linkedinCallback = async (req: Request, res: Response) => {
     const profile = await getUserProfile(accessToken);
 
     // Aquí luego guardas en DB
-    console.log("USER:", profile);
+    await pool.query(
+      `
+  INSERT INTO leads (name, email)
+  VALUES ($1, $2)
+  ON CONFLICT (email)
+  DO UPDATE SET name = EXCLUDED.name
+  `,
+      [profile.name, profile.email]
+    );
 
     // Redirigir al frontend
     const frontendUrl = process.env.FRONTEND_URL;
