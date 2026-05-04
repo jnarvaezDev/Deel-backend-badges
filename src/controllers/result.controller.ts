@@ -6,11 +6,22 @@ import {
 } from "../services/virtualbadge.service";
 
 export const submitResults = async (req: Request, res: Response) => {
+  /*
+  return res.status(200).json({
+      id: 65,
+      tier: 'Global Leader',
+      credentialUrl: 'https://www.deel.com/es/deel-vs-competitors/?cq_src=google_ads&cq_cmp=18637706562&cq_term=factorial%20hr&cq_plac=&cq_net=g&cq_plt=gp&campaign_name=latam-t2_acq_searchnonbranded_google_search_competitors--es_all_all&utm_source=google&utm_medium=paid-search&utm_campaign=18637706562&utm_content=194809745912&utm_term=factorial%20hr&hsa_acc=3934198784&hsa_cam=18637706562&hsa_grp=194809745912&hsa_ad=800302934543&hsa_src=g&hsa_tgt=kwd-290221087655&hsa_kw=factorial%20hr&hsa_mt=b&hsa_net=adwords&hsa_ver=3&gad_source=1&gad_campaignid=18637706562&gbraid=0AAAAACWpCBH03NLuHpy_IVxlHXQP4QB22&gclid=Cj0KCQjw2MbPBhCSARIsAP3jP9w1jfDHQihS85u_jCc9hwYMmUJRH4uYcQG4pVycsPD5NPe4KIGKu2IaAr_3EALw_wcB',
+      issuedBy: "virtualbadge" ,
+      validation_page_url : 'https://www.deel.com/es/deel-vs-competitors/?cq_src=google_ads&cq_cmp=18637706562&cq_term=factorial%20hr&cq_plac=&cq_net=g&cq_plt=gp&campaign_name=latam-t2_acq_searchnonbranded_google_search_competitors--es_all_all&utm_source=google&utm_medium=paid-search&utm_campaign=18637706562&utm_content=194809745912&utm_term=factorial%20hr&hsa_acc=3934198784&hsa_cam=18637706562&hsa_grp=194809745912&hsa_ad=800302934543&hsa_src=g&hsa_tgt=kwd-290221087655&hsa_kw=factorial%20hr&hsa_mt=b&hsa_net=adwords&hsa_ver=3&gad_source=1&gad_campaignid=18637706562&gbraid=0AAAAACWpCBH03NLuHpy_IVxlHXQP4QB22&gclid=Cj0KCQjw2MbPBhCSARIsAP3jP9w1jfDHQihS85u_jCc9hwYMmUJRH4uYcQG4pVycsPD5NPe4KIGKu2IaAr_3EALw_wcB',
+      identification_number : '123-456-789l'
+    });*/
 
   try {
     const {
       name,
       email,
+      companyName,
+      jobTitle,
       badge,
       score,
       maxScore,
@@ -19,6 +30,8 @@ export const submitResults = async (req: Request, res: Response) => {
     } = req.body as {
       name?: string;
       email?: string;
+      companyName?: string;
+      jobTitle?: string;
       badge?: "talent" | "champion" | "leader" | "none";
       score?: number;
       maxScore?: number;
@@ -54,6 +67,8 @@ export const submitResults = async (req: Request, res: Response) => {
       recipientId: null as string | null,
       certificateId: null as string | null,
       validationUrl: null as string | null,
+      validation_page_url: null as string | null,
+      identification_number: null as string | null,
       raw: null as unknown,
     };
 
@@ -81,15 +96,17 @@ export const submitResults = async (req: Request, res: Response) => {
     const resultDb = await pool.query(
       `
       INSERT INTO results (
-        name, email, score, tier, answers,
-        vb_recipient_id, vb_certificate_id, vb_validation_url, vb_status, vb_raw_response
+        name, email, company, job, score, tier, answers,
+        vb_recipient_id, vb_certificate_id, vb_validation_url, vb_status, vb_validation_page_url, identification_number
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       RETURNING id
       `,
       [
         name ?? null,
         email,
+        companyName ?? null,
+        jobTitle ?? null,
         score ?? null,
         tier,
         JSON.stringify({
@@ -103,7 +120,8 @@ export const submitResults = async (req: Request, res: Response) => {
         vb.certificateId,
         vb.validationUrl,
         vb.validationUrl ? "issued" : "pending",
-        JSON.stringify(vb.raw),
+        vb.validation_page_url,
+        vb.identification_number
       ]
     );
 
@@ -124,6 +142,8 @@ export const submitResults = async (req: Request, res: Response) => {
       /*reason,*/
       credentialUrl: vb.validationUrl,
       issuedBy: vb.validationUrl ? "virtualbadge" : null,
+      validation_page_url: vb.validation_page_url,
+      identification_number: vb.identification_number
     });
   } catch (error) {
     console.error("submitResults error:", error);

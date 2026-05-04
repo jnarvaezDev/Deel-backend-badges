@@ -13,6 +13,8 @@ type IssueVirtualBadgeResult = {
     recipientId: string | null;
     certificateId: string | null;
     validationUrl: string | null;
+    validation_page_url: string | null;
+    identification_number: string | null;
     raw: unknown;
 };
 
@@ -84,11 +86,15 @@ export const issueVirtualBadge = async (
     const data = response.data;
 
     const recipient = data?.data?.[0];
+
+    
     
     return {
         recipientId: recipient?.id ?? null,
         certificateId: recipient?.certificate ?? null,
         validationUrl: recipient?.access_page_url ?? null,
         raw: data,
+        validation_page_url: recipient?.validation_page_url ?? null,
+        identification_number: recipient?.identification_number ?? null,
     };
 };
