@@ -26,7 +26,14 @@ export const submitResults = async (req: Request, res: Response) => {
       score,
       maxScore,
       reason,
-      answers
+      answers,
+      openText,
+      honestyConfirmed,
+      intent,
+
+      rawScore,
+      adjustedScore,
+      aiValidation
     } = req.body as {
       name?: string;
       email?: string;
@@ -37,6 +44,14 @@ export const submitResults = async (req: Request, res: Response) => {
       maxScore?: number;
       reason?: string;
       answers?: Record<string, any>;
+      openText?: string;
+      honestyConfirmed?: boolean;
+      intent?: Record<string, boolean>;
+
+      rawScore?: number;
+      adjustedScore?: number;
+
+      aiValidation?: Record<string, any>;
     };
 
     //VALIDACIONES
@@ -96,7 +111,7 @@ export const submitResults = async (req: Request, res: Response) => {
     const resultDb = await pool.query(
       `
       INSERT INTO results (
-        name, email, company, job, score, tier, answers,
+        name, email, company, job, score, tier, assessment_data,
         vb_recipient_id, vb_certificate_id, vb_validation_url, vb_status, vb_validation_page_url, identification_number
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
@@ -114,7 +129,13 @@ export const submitResults = async (req: Request, res: Response) => {
           score,
           maxScore,
           reason,
-          answers
+          rawScore,
+          adjustedScore,
+          answers,
+          openText,
+          honestyConfirmed,
+          intent,
+          aiValidation,
         }),
         vb.recipientId,
         vb.certificateId,
