@@ -80,7 +80,6 @@ export const evaluateAssessment = ({
   if (route === "champion") {
     const q1 = pointsByQuestion["champion_q1"] ?? 0;
     const q2 = pointsByQuestion["champion_q2"] ?? 0;
-    const q4 = pointsByQuestion["champion_q4"] ?? 0;
 
     if (q1 === 0) {
       return {
@@ -93,7 +92,7 @@ export const evaluateAssessment = ({
       };
     }
 
-    if (q4 === 0 || q2 === 0) {
+    if (q2 === 0) {
       return { route, score, tier: null, status: "not_eligible" };
     }
 

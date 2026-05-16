@@ -71,6 +71,7 @@ export const issueVirtualBadge = async (
                     score: String(input.metadata?.score ?? ""),
                     tier: input.metadata?.tier,
                     status: input.metadata?.status,
+                    description: input.metadata?.description,
                 },
 
                 metadata: {

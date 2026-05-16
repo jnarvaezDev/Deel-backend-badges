@@ -147,7 +147,7 @@ export const championQuestions: Question[] = [
 export const leaderQuestions: Question[] = [
   {
     id: "leader_q1",
-    text: "How many direct reports do you currently manage (or have you managed) who are based in countries other than your own?",
+    text: "How many direct reports do(did) you manage in countries other than your own?",
     options: [
       { label: "A", text: "None — my team is in my home country", points: 0 },
       { label: "B", text: "1 person in another country", points: 0 },
@@ -177,12 +177,11 @@ export const leaderQuestions: Question[] = [
   },
   {
     id: "leader_q4",
-    text: "In how many world regions have you led or coordinated work?",
+    text: "How many continents have you led work in?",
     options: [
-      { label: "A", text: "1 region only", points: 0 },
-      { label: "B", text: "2 regions", points: 1 },
-      { label: "C", text: "3 regions", points: 2 },
-      { label: "D", text: "4 or more regions", points: 3 },
+      { label: "A", text: "1 continent", points: 0 },
+      { label: "B", text: "2 continents", points: 1 },
+      { label: "C", text: "3 continents or more", points: 3 },
     ],
   },
 ];

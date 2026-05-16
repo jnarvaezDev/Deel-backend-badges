@@ -20,8 +20,9 @@ export const submitResults = async (req: Request, res: Response) => {
     const {
       name,
       email,
-      companyName,
+      currentJobTitle,
       jobTitle,
+      currentCountry,
       badge,
       score,
       maxScore,
@@ -37,8 +38,9 @@ export const submitResults = async (req: Request, res: Response) => {
     } = req.body as {
       name?: string;
       email?: string;
-      companyName?: string;
+      currentJobTitle?: string;
       jobTitle?: string;
+      currentCountry?: string;
       badge?: "talent" | "champion" | "leader" | "none";
       score?: number;
       maxScore?: number;
@@ -63,6 +65,12 @@ export const submitResults = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "badge is required" });
     }
 
+    if (!currentCountry) {
+      return res.status(400).json({ message: "currentCountry is required" });
+    }
+
+    const resolvedCurrentJobTitle = currentJobTitle ?? jobTitle ?? null;
+
     /**
      *MAPEO DE BADGE → TIER
      */
@@ -74,6 +82,32 @@ export const submitResults = async (req: Request, res: Response) => {
     };
 
     const tier = badgeToTierMap[badge];
+
+    const lastAssessmentResult = await pool.query(
+      `
+      SELECT created_at
+      FROM results
+      WHERE email = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    const lastAssessmentDate = lastAssessmentResult.rows?.[0]?.created_at as Date | undefined;
+
+    if (lastAssessmentDate) {
+      const nextAvailableDate = new Date(lastAssessmentDate);
+      nextAvailableDate.setMonth(nextAvailableDate.getMonth() + 6);
+
+      if (new Date() < nextAvailableDate) {
+        return res.status(200).json({
+          status: "locked",
+          message: "You can only take the assessment once every 6 months.",
+          nextAvailableDate: nextAvailableDate.toISOString().slice(0, 10),
+        });
+      }
+    }
 
     /**
      *VirtualBadge
@@ -91,6 +125,15 @@ export const submitResults = async (req: Request, res: Response) => {
     if (badge !== "none" && tier) {
       const templateId = getVirtualBadgeTemplateId(tier);
 
+      const tierDescriptionMap: Record<string, string> = {
+        "Global Leader":
+          "According to an online assessment where the candidate stands by their own truth, Deel certifies that this professional has experience leading cross-border teams.",
+        "Global Champion":
+          "According to an online assessment where the candidate stands by their own truth, Deel certifies that this professional has experience working with cross-border teams.",
+        "Global Talent":
+          "According to an online assessment where the candidate stands by their own truth, Deel certifies that this professional has the necessary qualifications to work with cross-border teams.",
+      };
+
       vb = await issueVirtualBadge({
         templateId,
         email,
@@ -101,6 +144,7 @@ export const submitResults = async (req: Request, res: Response) => {
           badge,
           tier,
           reason,
+          description: tierDescriptionMap[tier],
         },
       });
     }
@@ -111,7 +155,7 @@ export const submitResults = async (req: Request, res: Response) => {
     const resultDb = await pool.query(
       `
       INSERT INTO results (
-        name, email, company, job, score, tier, assessment_data,
+        name, email, current_job_title, current_country, score, tier, assessment_data,
         vb_recipient_id, vb_certificate_id, vb_validation_url, vb_status, vb_validation_page_url, identification_number
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
@@ -120,8 +164,8 @@ export const submitResults = async (req: Request, res: Response) => {
       [
         name ?? null,
         email,
-        companyName ?? null,
-        jobTitle ?? null,
+        resolvedCurrentJobTitle,
+        currentCountry,
         score ?? null,
         tier,
         JSON.stringify({
