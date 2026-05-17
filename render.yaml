@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: backend-badges
+    env: node
+    buildCommand: npm run build:ci
+    startCommand: npm start
