@@ -5,6 +5,25 @@ import {
   issueVirtualBadge,
 } from "../services/virtualbadge.service";
 
+const COMMUNITY_STATS_TTL_MS = 60 * 60 * 1000;
+
+type CommunityStatsPayload = {
+  totalCertified: number;
+  byTier: {
+    globalTalent: number;
+    globalChampion: number;
+    globalLeader: number;
+  };
+  generatedAt: string;
+};
+
+let communityStatsCache:
+  | {
+      value: CommunityStatsPayload;
+      expiresAt: number;
+    }
+  | null = null;
+
 export const submitResults = async (req: Request, res: Response) => {
   /*
   return res.status(200).json({
@@ -249,6 +268,61 @@ export const getUserBadges = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("getUserBadges error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getCommunityStats = async (_req: Request, res: Response) => {
+  try {
+    const now = Date.now();
+
+    if (communityStatsCache && communityStatsCache.expiresAt > now) {
+      res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+      return res.status(200).json({
+        ...communityStatsCache.value,
+        cache: "hit",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT tier, COUNT(*)::int AS count
+      FROM results
+      WHERE tier IN ('Global Talent', 'Global Champion', 'Global Leader')
+      GROUP BY tier
+      `
+    );
+
+    const countsByTier = result.rows.reduce<Record<string, number>>((acc, row) => {
+      acc[row.tier] = Number(row.count ?? 0);
+      return acc;
+    }, {});
+
+    const payload: CommunityStatsPayload = {
+      totalCertified:
+        (countsByTier["Global Talent"] ?? 0) +
+        (countsByTier["Global Champion"] ?? 0) +
+        (countsByTier["Global Leader"] ?? 0),
+      byTier: {
+        globalTalent: countsByTier["Global Talent"] ?? 0,
+        globalChampion: countsByTier["Global Champion"] ?? 0,
+        globalLeader: countsByTier["Global Leader"] ?? 0,
+      },
+      generatedAt: new Date().toISOString(),
+    };
+
+    communityStatsCache = {
+      value: payload,
+      expiresAt: now + COMMUNITY_STATS_TTL_MS,
+    };
+
+    res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+    return res.status(200).json({
+      ...payload,
+      cache: "miss",
+    });
+  } catch (error) {
+    console.error("getCommunityStats error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
