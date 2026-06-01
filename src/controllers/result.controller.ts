@@ -230,6 +230,7 @@ export const getUserBadges = async (req: Request, res: Response) => {
         id,
         name,
         email,
+        current_country,
         score,
         tier,
         vb_validation_url,
