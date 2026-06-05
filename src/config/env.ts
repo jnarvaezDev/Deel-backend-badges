@@ -6,6 +6,7 @@ type NodeEnv = "development" | "test" | "production";
 
 const requiredEnvVars = [
   "DATABASE_URL",
+  "INTERNAL_API_BEARER_TOKEN",
   "OPENAI_API_KEY",
   "VIRTUALBADGE_API_KEY",
   "VIRTUALBADGE_API_BASE_URL",
@@ -83,6 +84,7 @@ export const env = {
   frontendUrl,
   allowedOrigins,
   databaseUrl: process.env.DATABASE_URL as string,
+  internalApiBearerToken: process.env.INTERNAL_API_BEARER_TOKEN as string,
   dbSslInsecure: parseBoolean(process.env.DB_SSL_INSECURE),
   dbSslCa: process.env.DB_SSL_CA,
 };

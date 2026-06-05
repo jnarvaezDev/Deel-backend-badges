@@ -4,6 +4,7 @@ import {
   getVirtualBadgeTemplateId,
   issueVirtualBadge,
 } from "../services/virtualbadge.service";
+import { fetchResultsTable, parseTablePagination } from "../services/table.service";
 
 const COMMUNITY_STATS_TTL_MS = 60 * 60 * 1000;
 
@@ -323,6 +324,18 @@ export const getCommunityStats = async (_req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("getCommunityStats error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getResultsTable = async (req: Request, res: Response) => {
+  try {
+    const pagination = parseTablePagination(req.query.page, req.query.limit);
+    const table = await fetchResultsTable(pagination);
+
+    return res.status(200).json(table);
+  } catch (error) {
+    console.error("getResultsTable error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
