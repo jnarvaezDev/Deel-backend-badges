@@ -1,7 +1,8 @@
 import pool from "../db";
 
 type CreateLeadPayload = {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   currentJobTitle?: string;
   jobTitle?: string;
@@ -12,7 +13,8 @@ type CreateLeadPayload = {
 export async function createOrUpdateLead(
   payload: CreateLeadPayload
 ) {
-  const { name, email, currentJobTitle, jobTitle, job, currentCountry } = payload;
+  const { firstName, lastName, email, currentJobTitle, jobTitle, job, currentCountry } = payload;
+  const name = `${firstName} ${lastName}`.trim();
   const resolvedCurrentJobTitle = currentJobTitle ?? jobTitle ?? job ?? null;
 
   await pool.query(

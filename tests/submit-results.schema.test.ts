@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { submitResultsSchema } from "../src/schemas/request.schemas";
 
 const validPayload = {
+  firstName: "Dev",
+  lastName: "Acme",
   email: "dev@acme.com",
   currentCountry: "Argentina",
   badge: "talent",

@@ -6,6 +6,8 @@ type NodeEnv = "development" | "test" | "production";
 
 const requiredEnvVars = [
   "DATABASE_URL",
+  "HUBSPOT_FORM_ID",
+  "HUBSPOT_PORTAL_ID",
   "INTERNAL_API_BEARER_TOKEN",
   "OPENAI_API_KEY",
   "VIRTUALBADGE_API_KEY",
@@ -84,6 +86,8 @@ export const env = {
   frontendUrl,
   allowedOrigins,
   databaseUrl: process.env.DATABASE_URL as string,
+  hubspotFormId: process.env.HUBSPOT_FORM_ID as string,
+  hubspotPortalId: process.env.HUBSPOT_PORTAL_ID as string,
   internalApiBearerToken: process.env.INTERNAL_API_BEARER_TOKEN as string,
   dbSslInsecure: parseBoolean(process.env.DB_SSL_INSECURE),
   dbSslCa: process.env.DB_SSL_CA,

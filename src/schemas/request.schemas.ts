@@ -44,7 +44,8 @@ const intentSchema = z
 
 export const submitResultsSchema = z
   .object({
-    name: z.string().trim().min(1).max(120).optional(),
+    firstName: z.string().trim().min(1).max(120),
+    lastName: z.string().trim().min(1).max(120),
     email: professionalEmailSchema,
     currentJobTitle: z.string().trim().min(1).max(120).optional(),
     jobTitle: z.string().trim().min(1).max(120).optional(),
@@ -68,7 +69,8 @@ export const submitResultsSchema = z
 
 export const createLeadSchema = z
   .object({
-    name: z.string().trim().min(1).max(120),
+    firstName: z.string().trim().min(1).max(120),
+    lastName: z.string().trim().min(1).max(120),
     email: professionalEmailSchema,
     currentJobTitle: z.string().trim().min(1).max(120).optional(),
     jobTitle: z.string().trim().min(1).max(120).optional(),

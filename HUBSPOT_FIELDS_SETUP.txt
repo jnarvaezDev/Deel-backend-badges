@@ -1,0 +1,12 @@
+HubSpot fields for backend-badges assessment submissions
+
+Create these HubSpot properties exactly with these internal property names:
+email
+firstname
+lastname
+headquarters
+jobtitle
+badges_created_at
+badges_tier
+badges_score
+badges_validation_page_url

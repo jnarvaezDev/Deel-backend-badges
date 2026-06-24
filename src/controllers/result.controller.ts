@@ -4,6 +4,7 @@ import {
   getVirtualBadgeTemplateId,
   issueVirtualBadge,
 } from "../services/virtualbadge.service";
+import { submitToHubspot } from "../services/hubspot.service";
 import { fetchResultsTable, parseTablePagination } from "../services/table.service";
 
 const COMMUNITY_STATS_TTL_MS = 60 * 60 * 1000;
@@ -38,7 +39,8 @@ export const submitResults = async (req: Request, res: Response) => {
 
   try {
     const {
-      name,
+      firstName,
+      lastName,
       email,
       currentJobTitle,
       jobTitle,
@@ -56,7 +58,8 @@ export const submitResults = async (req: Request, res: Response) => {
       adjustedScore,
       aiValidation
     } = req.body as {
-      name?: string;
+      firstName?: string;
+      lastName?: string;
       email?: string;
       currentJobTitle?: string;
       jobTitle?: string;
@@ -81,6 +84,14 @@ export const submitResults = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "email is required" });
     }
 
+    if (!firstName) {
+      return res.status(400).json({ message: "firstName is required" });
+    }
+
+    if (!lastName) {
+      return res.status(400).json({ message: "lastName is required" });
+    }
+
     if (!badge) {
       return res.status(400).json({ message: "badge is required" });
     }
@@ -90,6 +101,8 @@ export const submitResults = async (req: Request, res: Response) => {
     }
 
     const resolvedCurrentJobTitle = currentJobTitle ?? jobTitle ?? null;
+    const fullName = `${firstName} ${lastName}`.trim();
+    const createdAt = new Date().toISOString();
 
     /**
      *MAPEO DE BADGE → TIER
@@ -157,7 +170,7 @@ export const submitResults = async (req: Request, res: Response) => {
       vb = await issueVirtualBadge({
         templateId,
         email,
-        fullName: name,
+        fullName,
         metadata: {
           score,
           maxScore,
@@ -182,7 +195,7 @@ export const submitResults = async (req: Request, res: Response) => {
       RETURNING id
       `,
       [
-        name ?? null,
+        fullName,
         email,
         resolvedCurrentJobTitle,
         currentCountry,
@@ -216,10 +229,7 @@ export const submitResults = async (req: Request, res: Response) => {
       return res.status(500).json({ message: "Failed to save result" });
     }
 
-    /**
-     *RESPONSE FINAL
-     */
-    return res.status(200).json({
+    const responsePayload = {
       id: insertedId,
       /*score,*/
       tier,
@@ -229,7 +239,52 @@ export const submitResults = async (req: Request, res: Response) => {
       issuedBy: vb.validationUrl ? "virtualbadge" : null,
       validation_page_url: vb.validation_page_url,
       identification_number: vb.identification_number
-    });
+    };
+
+    /**
+      *RESPONSE FINAL
+      */
+    res.status(200).json(responsePayload);
+
+    void (async () => {
+      try {
+        console.info("HubSpot submission started", {
+          email,
+          createdAt,
+          score: score ?? null,
+          tier,
+        });
+
+        await submitToHubspot({
+          firstName,
+          lastName,
+          email,
+          created_at: createdAt,
+          current_job_title: resolvedCurrentJobTitle,
+          current_country: currentCountry,
+          score: score ?? null,
+          tier,
+          vb_validation_page_url: vb.validation_page_url,
+        });
+
+        console.info("HubSpot submission succeeded", {
+          email,
+          createdAt,
+          score: score ?? null,
+          tier,
+        });
+      } catch (error) {
+        console.error("HubSpot submission failed", {
+          email,
+          createdAt,
+          score: score ?? null,
+          tier,
+          error,
+        });
+      }
+    })();
+
+    return;
   } catch (error) {
     console.error("submitResults error:", error);
     return res.status(500).json({ message: "Internal server error" });
