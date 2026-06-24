@@ -27,6 +27,18 @@ export const FIELD_MAPPING = {
 const HUBSPOT_PAGE_NAME = "Global Badges Assessment";
 const HUBSPOT_TIMEOUT_MS = 5000;
 
+const regionDisplayNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+export const getHubspotCountryValue = (country: string) => {
+  const trimmedCountry = country.trim();
+
+  if (/^[A-Za-z]{2}$/.test(trimmedCountry)) {
+    return regionDisplayNames.of(trimmedCountry.toUpperCase()) ?? trimmedCountry;
+  }
+
+  return trimmedCountry;
+};
+
 export const buildFields = (payload: HubspotPayload) => {
   return (Object.entries(FIELD_MAPPING) as Array<
     [keyof HubspotPayload, (typeof FIELD_MAPPING)[keyof typeof FIELD_MAPPING]]
@@ -37,7 +49,9 @@ export const buildFields = (payload: HubspotPayload) => {
       return fields;
     }
 
-    const stringValue = String(value).trim();
+    const stringValue = key === "current_country"
+      ? getHubspotCountryValue(String(value))
+      : String(value).trim();
 
     if (stringValue.length === 0) {
       return fields;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIELD_MAPPING, buildFields } from "../src/services/hubspot.service";
+import { FIELD_MAPPING, buildFields, getHubspotCountryValue } from "../src/services/hubspot.service";
 
 describe("hubspot service", () => {
   it("maps fields to the exact HubSpot property names required by the client", () => {
@@ -43,6 +43,24 @@ describe("hubspot service", () => {
         value: "https://example.com/verify",
       },
     ]);
+  });
+
+  it("sends the full country name to HubSpot when the app stores an ISO country code", () => {
+    expect(getHubspotCountryValue("AR")).toBe("Argentina");
+
+    expect(
+      buildFields({
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "jane@acme.com",
+        created_at: "2026-06-18T12:34:56.789Z",
+        current_job_title: "Engineering Manager",
+        current_country: "BR",
+        score: 93,
+        tier: "Global Leader",
+        vb_validation_page_url: "https://example.com/verify",
+      })
+    ).toContainEqual({ name: "headquarters", value: "Brazil" });
   });
 
   it("skips null or blank optional values", () => {
