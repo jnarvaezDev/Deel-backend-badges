@@ -7,6 +7,7 @@ import validationRoutes from "./routes/validation.routes";
 import rateLimit from "express-rate-limit";
 import leadRoutes from "./routes/lead.routes";
 import geoRoutes from "./routes/geo.routes";
+import { getGeoDebugController } from "./controllers/geo.controller";
 import { env } from "./config/env";
 
 const limiter = rateLimit({
@@ -35,6 +36,7 @@ app.use(
 
 app.use(express.json({ limit: "200kb" }));
 app.use(limiter);
+app.get("/debug", getGeoDebugController);
 app.use("/api", geoRoutes);
 app.use("/api/results", sensitiveLimiter);
 app.use("/api/leads", sensitiveLimiter);
