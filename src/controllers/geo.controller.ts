@@ -26,18 +26,38 @@ function getGeoResult(req: Request) {
   const country = geo?.country ?? null;
 
   return {
+    ip,
     country,
     isBrazil: country === "BR",
   };
+}
+
+function maskIp(ip: string | null): string | null {
+  if (!ip) return null;
+
+  const ipv4Match = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    return `${ipv4Match[1]}.${ipv4Match[2]}.xxx.xxx`;
+  }
+
+  const [firstSegment, secondSegment] = ip.split(":");
+  return [firstSegment, secondSegment].filter(Boolean).join(":") + ":xxxx";
 }
 
 export function getGeoController(req: Request, res: Response) {
   try {
     const result = getGeoResult(req);
 
-    console.info("[geo.controller] country detection", result);
+    console.info("[geo.controller] country detection", {
+      ip: maskIp(result.ip),
+      country: result.country,
+      isBrazil: result.isBrazil,
+    });
 
-    return res.status(200).json(result);
+    return res.status(200).json({
+      country: result.country,
+      isBrazil: result.isBrazil,
+    });
   } catch (error) {
     console.error("[geo.controller]", error);
 

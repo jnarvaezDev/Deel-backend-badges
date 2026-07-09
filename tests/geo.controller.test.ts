@@ -53,6 +53,7 @@ describe("geo controller", () => {
 
     expect(lookup).toHaveBeenCalledWith("8.8.8.8");
     expect(consoleInfo).toHaveBeenCalledWith("[geo.controller] country detection", {
+      ip: "8.8.xxx.xxx",
       country: "BR",
       isBrazil: true,
     });
