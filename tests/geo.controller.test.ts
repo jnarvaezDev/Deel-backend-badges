@@ -8,12 +8,7 @@ vi.mock("geoip-lite", () => ({
 }));
 
 import geoip from "geoip-lite";
-import {
-  getGeoController,
-  getGeoDebugController,
-  getRequestIp,
-  normalizeIp,
-} from "../src/controllers/geo.controller";
+import { getGeoController, getRequestIp, normalizeIp } from "../src/controllers/geo.controller";
 
 const lookup = vi.mocked(geoip.lookup);
 
@@ -45,6 +40,7 @@ describe("geo controller", () => {
   });
 
   it("returns Brazil branding metadata for Brazilian IPs", () => {
+    const consoleInfo = vi.spyOn(console, "info").mockImplementation(() => undefined);
     lookup.mockReturnValue({ country: "BR" } as ReturnType<typeof geoip.lookup>);
 
     const req = {
@@ -56,8 +52,14 @@ describe("geo controller", () => {
     getGeoController(req, res);
 
     expect(lookup).toHaveBeenCalledWith("8.8.8.8");
+    expect(consoleInfo).toHaveBeenCalledWith("[geo.controller] country detection", {
+      country: "BR",
+      isBrazil: true,
+    });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ country: "BR", isBrazil: true });
+
+    consoleInfo.mockRestore();
   });
 
   it("always returns a safe 200 response on lookup errors", () => {
@@ -78,24 +80,5 @@ describe("geo controller", () => {
     expect(res.json).toHaveBeenCalledWith({ country: null, isBrazil: false });
 
     consoleError.mockRestore();
-  });
-
-  it("returns temporary debug geo metadata without exposing request headers", () => {
-    lookup.mockReturnValue({ country: "BR" } as ReturnType<typeof geoip.lookup>);
-
-    const req = {
-      headers: { "x-forwarded-for": "8.8.8.8" },
-      socket: {},
-    } as unknown as Request;
-    const res = createResponse();
-
-    getGeoDebugController(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      endpoint: "debug",
-      geo: { country: "BR", isBrazil: true },
-      note: "Temporary debug endpoint. Remove after production geo validation.",
-    });
   });
 });
