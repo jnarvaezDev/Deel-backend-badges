@@ -18,6 +18,13 @@ type IssueVirtualBadgeResult = {
     raw: unknown;
 };
 
+const BRAZIL_COUNTRY_VALUES = new Set(["br", "brazil", "brasil"]);
+
+const isBrazilCountry = (country?: string | null): boolean => {
+    const normalized = country?.trim().toLowerCase();
+    return normalized ? BRAZIL_COUNTRY_VALUES.has(normalized) : false;
+};
+
 
 const api = axios.create({
     baseURL: process.env.VIRTUALBADGE_API_BASE_URL,
@@ -27,14 +34,20 @@ const api = axios.create({
     },
 });
 
-export const getVirtualBadgeTemplateId = (tier: string): string => {
-    const map: Record<string, string | undefined> = {
+export const getVirtualBadgeTemplateId = (tier: string, country?: string | null): string => {
+    const defaultTemplateMap: Record<string, string | undefined> = {
         "Global Talent": process.env.VIRTUALBADGE_TEMPLATE_GLOBAL_TALENT,
         "Global Leader": process.env.VIRTUALBADGE_TEMPLATE_GLOBAL_LEADER,
         "Global Champion": process.env.VIRTUALBADGE_TEMPLATE_GLOBAL_CHAMPION,
     };
 
-    const templateId = map[tier];
+    const nomadTemplateMap: Record<string, string | undefined> = {
+        "Global Talent": process.env.VIRTUALBADGE_TEMPLATE_NOMAD_GLOBAL_TALENT,
+        "Global Leader": process.env.VIRTUALBADGE_TEMPLATE_NOMAD_GLOBAL_LEADER,
+        "Global Champion": process.env.VIRTUALBADGE_TEMPLATE_NOMAD_GLOBAL_CHAMPION,
+    };
+
+    const templateId = isBrazilCountry(country) ? nomadTemplateMap[tier] : defaultTemplateMap[tier];
     if (!templateId) {
         throw new Error(`No VirtualBadge template configured for tier: ${tier}`);
     }

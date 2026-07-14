@@ -156,7 +156,7 @@ export const submitResults = async (req: Request, res: Response) => {
 
     //SOLO crea badge si aplica
     if (badge !== "none" && tier) {
-      const templateId = getVirtualBadgeTemplateId(tier);
+      const templateId = getVirtualBadgeTemplateId(tier, currentCountry);
 
       const tierDescriptionMap: Record<string, string> = {
         "Global Leader":
