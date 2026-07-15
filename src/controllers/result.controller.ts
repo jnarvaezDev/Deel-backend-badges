@@ -42,6 +42,7 @@ export const submitResults = async (req: Request, res: Response) => {
       firstName,
       lastName,
       email,
+      employmentStatus,
       currentJobTitle,
       jobTitle,
       currentCountry,
@@ -61,6 +62,7 @@ export const submitResults = async (req: Request, res: Response) => {
       firstName?: string;
       lastName?: string;
       email?: string;
+      employmentStatus?: "employed" | "unemployed";
       currentJobTitle?: string;
       jobTitle?: string;
       currentCountry?: string;
@@ -101,6 +103,7 @@ export const submitResults = async (req: Request, res: Response) => {
     }
 
     const resolvedCurrentJobTitle = currentJobTitle ?? jobTitle ?? null;
+    const resolvedEmploymentStatus = employmentStatus ?? "employed";
     const fullName = `${firstName} ${lastName}`.trim();
     const createdAt = new Date().toISOString();
 
@@ -188,21 +191,23 @@ export const submitResults = async (req: Request, res: Response) => {
     const resultDb = await pool.query(
       `
       INSERT INTO results (
-        name, email, current_job_title, current_country, score, tier, assessment_data,
+        name, email, employment_status, current_job_title, current_country, score, tier, assessment_data,
         vb_recipient_id, vb_certificate_id, vb_validation_url, vb_status, vb_validation_page_url, identification_number
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
       RETURNING id
       `,
       [
         fullName,
         email,
+        resolvedEmploymentStatus,
         resolvedCurrentJobTitle,
         currentCountry,
         score ?? null,
         tier,
         JSON.stringify({
           badge,
+          employmentStatus: resolvedEmploymentStatus,
           score,
           maxScore,
           reason,

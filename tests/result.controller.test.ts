@@ -48,6 +48,7 @@ describe("submitResults", () => {
           firstName: "Jane",
           lastName: "Doe",
           email: "jane@acme.com",
+          employmentStatus: "employed",
           currentCountry: "Argentina",
           badge: "none",
           score: 42,

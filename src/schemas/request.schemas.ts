@@ -22,14 +22,30 @@ const isBlockedPublicEmail = (email: string) => {
   return BLOCKED_PUBLIC_EMAIL_DOMAINS.has(domain);
 };
 
-const professionalEmailSchema = z
+const employmentStatusSchema = z.enum(["employed", "unemployed"]).default("employed");
+
+const emailSchema = z
   .string()
   .trim()
   .email()
-  .max(320)
-  .refine((email) => !isBlockedPublicEmail(email), {
-    message: "Please use your professional email (personal domains are not allowed)",
-  });
+  .max(320);
+
+const professionalEmailSchema = emailSchema.refine((email) => !isBlockedPublicEmail(email), {
+  message: "Please use your professional email (personal domains are not allowed)",
+});
+
+const requireProfessionalEmailWhenEmployed = <T extends { email: string; employmentStatus: "employed" | "unemployed" }>(
+  data: T,
+  ctx: z.RefinementCtx
+) => {
+  if (data.employmentStatus === "employed" && !professionalEmailSchema.safeParse(data.email).success) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["email"],
+      message: "Please use your professional email (personal domains are not allowed)",
+    });
+  }
+};
 
 const maxKeys = <T extends Record<string, unknown>>(value: T, max: number) =>
   Object.keys(value).length <= max;
@@ -46,7 +62,8 @@ export const submitResultsSchema = z
   .object({
     firstName: z.string().trim().min(1).max(120),
     lastName: z.string().trim().min(1).max(120),
-    email: professionalEmailSchema,
+    email: emailSchema,
+    employmentStatus: employmentStatusSchema,
     currentJobTitle: z.string().trim().min(1).max(120).optional(),
     jobTitle: z.string().trim().min(1).max(120).optional(),
     currentCountry: z.string().trim().min(1).max(120),
@@ -65,19 +82,22 @@ export const submitResultsSchema = z
       .refine((value) => maxKeys(value, 50), "Too many aiValidation entries")
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine(requireProfessionalEmailWhenEmployed);
 
 export const createLeadSchema = z
   .object({
     firstName: z.string().trim().min(1).max(120),
     lastName: z.string().trim().min(1).max(120),
-    email: professionalEmailSchema,
+    email: emailSchema,
+    employmentStatus: employmentStatusSchema,
     currentJobTitle: z.string().trim().min(1).max(120).optional(),
     jobTitle: z.string().trim().min(1).max(120).optional(),
     job: z.string().trim().min(1).max(120).optional(),
     currentCountry: z.string().trim().min(1).max(120),
   })
-  .strict();
+  .strict()
+  .superRefine(requireProfessionalEmailWhenEmployed);
 
 const validateAnswerItemSchema = z
   .object({

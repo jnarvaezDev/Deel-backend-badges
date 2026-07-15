@@ -27,6 +27,7 @@ type ResultTableRow = {
   id: number;
   name: string | null;
   email: string;
+  employment_status: "employed" | "unemployed" | null;
   current_job_title: string | null;
   current_country: string;
   score: number | null;
@@ -45,6 +46,7 @@ type LeadTableRow = {
   id: number;
   name: string;
   email: string;
+  employment_status: "employed" | "unemployed" | null;
   current_job_title: string | null;
   current_country: string;
   created_at: string;
@@ -114,6 +116,7 @@ export const fetchResultsTable = async (
       id,
       name,
       email,
+      employment_status,
       current_job_title,
       current_country,
       score,
@@ -150,6 +153,7 @@ export const fetchLeadsTable = async (
       id,
       name,
       email,
+      employment_status,
       current_job_title,
       current_country,
       created_at
