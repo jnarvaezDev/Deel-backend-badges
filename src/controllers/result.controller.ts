@@ -4,7 +4,7 @@ import {
   getVirtualBadgeTemplateId,
   issueVirtualBadge,
 } from "../services/virtualbadge.service";
-import { submitToHubspot } from "../services/hubspot.service";
+import { getHubspotIntentValue, submitToHubspot } from "../services/hubspot.service";
 import { fetchResultsTable, parseTablePagination } from "../services/table.service";
 
 const COMMUNITY_STATS_TTL_MS = 60 * 60 * 1000;
@@ -265,6 +265,7 @@ export const submitResults = async (req: Request, res: Response) => {
           score: score ?? null,
           tier,
           vb_validation_page_url: vb.validation_page_url,
+          intent: getHubspotIntentValue(intent),
         });
 
         console.info("HubSpot submission succeeded", {

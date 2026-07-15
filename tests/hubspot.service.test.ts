@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { FIELD_MAPPING, buildFields, getHubspotCountryValue } from "../src/services/hubspot.service";
+import {
+  FIELD_MAPPING,
+  buildFields,
+  getHubspotCountryValue,
+  getHubspotIntentValue,
+} from "../src/services/hubspot.service";
 
 describe("hubspot service", () => {
   it("maps fields to the exact HubSpot property names required by the client", () => {
@@ -13,6 +18,7 @@ describe("hubspot service", () => {
       score: "badges_score",
       tier: "badges_tier",
       vb_validation_page_url: "badges_validation_page_url",
+      intent: "badges_intent",
     });
   });
 
@@ -28,6 +34,7 @@ describe("hubspot service", () => {
         score: 93,
         tier: "Global Leader",
         vb_validation_page_url: "https://example.com/verify",
+        intent: "hiring_global_roles;international_job_opportunities",
       })
     ).toEqual([
       { name: "firstname", value: "Jane" },
@@ -42,7 +49,49 @@ describe("hubspot service", () => {
         name: "badges_validation_page_url",
         value: "https://example.com/verify",
       },
+      {
+        name: "badges_intent",
+        value: "hiring_global_roles;international_job_opportunities",
+      },
     ]);
+  });
+
+  it("maps selected intent keys to the exact HubSpot internal values", () => {
+    expect(
+      getHubspotIntentValue({
+        hiringGlobalRoles: true,
+        jobOpportunities: true,
+        exploring: false,
+      })
+    ).toBe("hiring_global_roles;international_job_opportunities");
+
+    expect(
+      getHubspotIntentValue({
+        hiringGlobalRoles: false,
+        jobOpportunities: false,
+        exploring: true,
+      })
+    ).toBe("exploring");
+  });
+
+  it("omits intent when none are selected or intent is missing", () => {
+    expect(getHubspotIntentValue({ hiringGlobalRoles: false })).toBeNull();
+    expect(getHubspotIntentValue(null)).toBeNull();
+
+    expect(
+      buildFields({
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "jane@acme.com",
+        created_at: "2026-06-18T12:34:56.789Z",
+        current_job_title: "Engineering Manager",
+        current_country: "Argentina",
+        score: 93,
+        tier: "Global Leader",
+        vb_validation_page_url: "https://example.com/verify",
+        intent: null,
+      })
+    ).not.toContainEqual(expect.objectContaining({ name: "badges_intent" }));
   });
 
   it("sends the full country name to HubSpot when the app stores an ISO country code", () => {

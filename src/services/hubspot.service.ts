@@ -10,6 +10,7 @@ export type HubspotPayload = {
   score: number | null;
   tier: string | null;
   vb_validation_page_url: string | null;
+  intent?: string | null;
 };
 
 export const FIELD_MAPPING = {
@@ -22,6 +23,13 @@ export const FIELD_MAPPING = {
   score: "badges_score",
   tier: "badges_tier",
   vb_validation_page_url: "badges_validation_page_url",
+  intent: "badges_intent",
+} as const;
+
+const INTENT_MAPPING = {
+  hiringGlobalRoles: "hiring_global_roles",
+  jobOpportunities: "international_job_opportunities",
+  exploring: "exploring",
 } as const;
 
 const HUBSPOT_PAGE_NAME = "Global Badges Assessment";
@@ -37,6 +45,20 @@ export const getHubspotCountryValue = (country: string) => {
   }
 
   return trimmedCountry;
+};
+
+export const getHubspotIntentValue = (intent?: Record<string, boolean> | null) => {
+  if (!intent) {
+    return null;
+  }
+
+  const selected = (Object.entries(INTENT_MAPPING) as Array<
+    [keyof typeof INTENT_MAPPING, (typeof INTENT_MAPPING)[keyof typeof INTENT_MAPPING]]
+  >)
+    .filter(([key]) => intent[key] === true)
+    .map(([, value]) => value);
+
+  return selected.length > 0 ? selected.join(";") : null;
 };
 
 export const buildFields = (payload: HubspotPayload) => {
