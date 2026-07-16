@@ -54,7 +54,7 @@ describe("submitResults", () => {
           score: 42,
           intent: {
             hiringGlobalRoles: true,
-            jobOpportunities: true,
+            seekingOpportunities: true,
             exploring: false,
           },
         },

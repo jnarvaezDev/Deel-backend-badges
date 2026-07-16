@@ -60,7 +60,7 @@ describe("hubspot service", () => {
     expect(
       getHubspotIntentValue({
         hiringGlobalRoles: true,
-        jobOpportunities: true,
+        seekingOpportunities: true,
         exploring: false,
       })
     ).toBe("hiring_global_roles;international_job_opportunities");
@@ -68,10 +68,28 @@ describe("hubspot service", () => {
     expect(
       getHubspotIntentValue({
         hiringGlobalRoles: false,
-        jobOpportunities: false,
+        seekingOpportunities: false,
         exploring: true,
       })
     ).toBe("exploring");
+  });
+
+  it("maps frontend seekingOpportunities submissions to HubSpot job opportunity intent", () => {
+    expect(
+      getHubspotIntentValue({
+        exploring: false,
+        hiringGlobalRoles: false,
+        seekingOpportunities: true,
+      })
+    ).toBe("international_job_opportunities");
+
+    expect(
+      getHubspotIntentValue({
+        exploring: true,
+        hiringGlobalRoles: false,
+        seekingOpportunities: true,
+      })
+    ).toBe("international_job_opportunities;exploring");
   });
 
   it("omits intent when none are selected or intent is missing", () => {

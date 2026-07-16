@@ -28,7 +28,7 @@ export const FIELD_MAPPING = {
 
 const INTENT_MAPPING = {
   hiringGlobalRoles: "hiring_global_roles",
-  jobOpportunities: "international_job_opportunities",
+  seekingOpportunities: "international_job_opportunities",
   exploring: "exploring",
 } as const;
 
