@@ -74,4 +74,47 @@ describe("submitResults", () => {
       })
     );
   });
+
+  it("normalizes blank unemployed job titles to Not applicable for results and HubSpot", async () => {
+    queryMock
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ id: 456 }] });
+
+    const statusMock = vi.fn().mockReturnThis();
+    const jsonMock = vi.fn().mockReturnThis();
+
+    await submitResults(
+      {
+        body: {
+          firstName: "Jane",
+          lastName: "Doe",
+          email: "jane@gmail.com",
+          employmentStatus: "unemployed",
+          currentJobTitle: "   ",
+          jobTitle: "",
+          currentCountry: "Argentina",
+          badge: "none",
+          score: 42,
+          intent: {
+            hiringGlobalRoles: false,
+            seekingOpportunities: true,
+            exploring: false,
+          },
+        },
+      } as any,
+      {
+        status: statusMock,
+        json: jsonMock,
+      } as any
+    );
+
+    await flushPromises();
+
+    expect(queryMock.mock.calls[1][1][3]).toBe("Not applicable");
+    expect(submitToHubspotMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        current_job_title: "Not applicable",
+      })
+    );
+  });
 });

@@ -1,5 +1,7 @@
 import pool from "../db";
 
+const UNEMPLOYED_JOB_TITLE_FALLBACK = "Not applicable";
+
 type CreateLeadPayload = {
   firstName: string;
   lastName: string;
@@ -17,7 +19,11 @@ export async function createOrUpdateLead(
   const { firstName, lastName, email, employmentStatus, currentJobTitle, jobTitle, job, currentCountry } = payload;
   const name = `${firstName} ${lastName}`.trim();
   const resolvedEmploymentStatus = employmentStatus ?? "employed";
-  const resolvedCurrentJobTitle = currentJobTitle ?? jobTitle ?? job ?? null;
+  const providedJobTitle = currentJobTitle ?? jobTitle ?? job ?? null;
+  const normalizedJobTitle = providedJobTitle?.trim() || null;
+  const resolvedCurrentJobTitle = resolvedEmploymentStatus === "unemployed"
+    ? normalizedJobTitle ?? UNEMPLOYED_JOB_TITLE_FALLBACK
+    : normalizedJobTitle;
 
   await pool.query(
     `

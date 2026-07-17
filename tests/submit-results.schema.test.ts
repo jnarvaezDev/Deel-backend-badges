@@ -67,6 +67,18 @@ describe("submitResultsSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts blank optional job titles so unemployed fallback can be normalized", () => {
+    const result = submitResultsSchema.safeParse({
+      ...validPayload,
+      employmentStatus: "unemployed",
+      email: "person@gmail.com",
+      currentJobTitle: "   ",
+      jobTitle: "",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it("defaults missing employmentStatus to employed", () => {
     const result = submitResultsSchema.safeParse(validPayload);
 

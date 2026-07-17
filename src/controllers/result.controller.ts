@@ -8,6 +8,7 @@ import { getHubspotIntentValue, submitToHubspot } from "../services/hubspot.serv
 import { fetchResultsTable, parseTablePagination } from "../services/table.service";
 
 const COMMUNITY_STATS_TTL_MS = 60 * 60 * 1000;
+const UNEMPLOYED_JOB_TITLE_FALLBACK = "Not applicable";
 
 type CommunityStatsPayload = {
   totalCertified: number;
@@ -102,8 +103,12 @@ export const submitResults = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "currentCountry is required" });
     }
 
-    const resolvedCurrentJobTitle = currentJobTitle ?? jobTitle ?? null;
     const resolvedEmploymentStatus = employmentStatus ?? "employed";
+    const normalizedCurrentJobTitle = currentJobTitle?.trim() || jobTitle?.trim() || null;
+    const resolvedCurrentJobTitle =
+      resolvedEmploymentStatus === "unemployed"
+        ? normalizedCurrentJobTitle ?? UNEMPLOYED_JOB_TITLE_FALLBACK
+        : normalizedCurrentJobTitle;
     const fullName = `${firstName} ${lastName}`.trim();
     const createdAt = new Date().toISOString();
 

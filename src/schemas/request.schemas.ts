@@ -23,6 +23,7 @@ const isBlockedPublicEmail = (email: string) => {
 };
 
 const employmentStatusSchema = z.enum(["employed", "unemployed"]).default("employed");
+const optionalTitleSchema = z.string().trim().max(120).optional();
 
 const emailSchema = z
   .string()
@@ -64,8 +65,8 @@ export const submitResultsSchema = z
     lastName: z.string().trim().min(1).max(120),
     email: emailSchema,
     employmentStatus: employmentStatusSchema,
-    currentJobTitle: z.string().trim().min(1).max(120).optional(),
-    jobTitle: z.string().trim().min(1).max(120).optional(),
+    currentJobTitle: optionalTitleSchema,
+    jobTitle: optionalTitleSchema,
     currentCountry: z.string().trim().min(1).max(120),
     badge: z.enum(["talent", "champion", "leader", "none"]),
     score: z.number().finite().min(0).max(1000).optional(),
@@ -91,9 +92,9 @@ export const createLeadSchema = z
     lastName: z.string().trim().min(1).max(120),
     email: emailSchema,
     employmentStatus: employmentStatusSchema,
-    currentJobTitle: z.string().trim().min(1).max(120).optional(),
-    jobTitle: z.string().trim().min(1).max(120).optional(),
-    job: z.string().trim().min(1).max(120).optional(),
+    currentJobTitle: optionalTitleSchema,
+    jobTitle: optionalTitleSchema,
+    job: optionalTitleSchema,
     currentCountry: z.string().trim().min(1).max(120),
   })
   .strict()
