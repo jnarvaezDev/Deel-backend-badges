@@ -69,7 +69,7 @@ export const issueVirtualBadge = async (
 
     const payload = {
         certificate: input.templateId,
-        send_emails: false,
+        send_emails: true,
         add_duplicates: true,
         recipients: [
             {
