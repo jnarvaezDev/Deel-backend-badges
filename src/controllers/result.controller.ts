@@ -5,7 +5,7 @@ import {
   issueVirtualBadge,
 } from "../services/virtualbadge.service";
 import { getHubspotIntentValue, submitToHubspot } from "../services/hubspot.service";
-import { fetchResultsTable, parseTablePagination } from "../services/table.service";
+import { fetchResultsTable, parseOptionalTablePagination } from "../services/table.service";
 
 const COMMUNITY_STATS_TTL_MS = 60 * 60 * 1000;
 const UNEMPLOYED_JOB_TITLE_FALLBACK = "Not applicable";
@@ -396,7 +396,7 @@ export const getCommunityStats = async (_req: Request, res: Response) => {
 
 export const getResultsTable = async (req: Request, res: Response) => {
   try {
-    const pagination = parseTablePagination(req.query.page, req.query.limit);
+    const pagination = parseOptionalTablePagination(req.query.page, req.query.limit);
     const table = await fetchResultsTable(pagination);
 
     return res.status(200).json(table);

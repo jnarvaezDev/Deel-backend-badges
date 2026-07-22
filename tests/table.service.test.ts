@@ -13,8 +13,15 @@ vi.mock("../src/db", () => ({
 import {
   fetchLeadsTable,
   fetchResultsTable,
+  parseOptionalTablePagination,
   parseTablePagination,
 } from "../src/services/table.service";
+
+describe("parseOptionalTablePagination", () => {
+  it("returns undefined when pagination parameters are not provided", () => {
+    expect(parseOptionalTablePagination(undefined, undefined)).toBeUndefined();
+  });
+});
 
 describe("parseTablePagination", () => {
   it("uses sane defaults for invalid input", () => {
@@ -82,6 +89,27 @@ describe("table service", () => {
       hasPreviousPage: false,
     });
     expect(response.data).toHaveLength(1);
+  });
+
+  it("returns all results rows when pagination is not requested", async () => {
+    queryMock
+      .mockResolvedValueOnce({ rows: [{ count: 2 }] })
+      .mockResolvedValueOnce({
+        rows: [
+          { id: 11, email: "one@acme.com" },
+          { id: 10, email: "two@acme.com" },
+        ],
+      });
+
+    const response = await fetchResultsTable(parseOptionalTablePagination(undefined, undefined));
+
+    expect(queryMock).toHaveBeenNthCalledWith(2, expect.stringContaining("FROM results"));
+    expect(queryMock.mock.calls[1]?.[0]).not.toContain("LIMIT");
+    expect(response).toMatchObject({
+      total: 2,
+      pagination: null,
+    });
+    expect(response.data).toHaveLength(2);
   });
 
   it("returns leads rows with pagination metadata", async () => {

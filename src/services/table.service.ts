@@ -20,7 +20,7 @@ type TableResponse<Row> = {
     totalPages: number;
     hasNextPage: boolean;
     hasPreviousPage: boolean;
-  };
+  } | null;
 };
 
 type ResultTableRow = {
@@ -81,11 +81,30 @@ export const parseTablePagination = (
   };
 };
 
+export const parseOptionalTablePagination = (
+  rawPage: unknown,
+  rawLimit: unknown
+): TablePagination | undefined => {
+  if (rawPage === undefined && rawLimit === undefined) {
+    return undefined;
+  }
+
+  return parseTablePagination(rawPage, rawLimit);
+};
+
 const buildTableResponse = <Row>(
   rows: Row[],
   total: number,
-  pagination: TablePagination
+  pagination?: TablePagination
 ): TableResponse<Row> => {
+  if (!pagination) {
+    return {
+      data: rows,
+      total,
+      pagination: null,
+    };
+  }
+
   const totalPages = total === 0 ? 0 : Math.ceil(total / pagination.limit);
 
   return {
@@ -103,15 +122,14 @@ const buildTableResponse = <Row>(
 };
 
 export const fetchResultsTable = async (
-  pagination: TablePagination
+  pagination?: TablePagination
 ): Promise<TableResponse<ResultTableRow>> => {
   const totalResult = await pool.query<{ count: string }>(
     "SELECT COUNT(*)::int AS count FROM results"
   );
   const total = Number(totalResult.rows[0]?.count ?? 0);
 
-  const rowsResult = await pool.query<ResultTableRow>(
-    `
+  const baseQuery = `
     SELECT
       id,
       name,
@@ -131,10 +149,16 @@ export const fetchResultsTable = async (
       created_at
     FROM results
     ORDER BY created_at DESC, id DESC
-    LIMIT $1 OFFSET $2
-    `,
-    [pagination.limit, pagination.offset]
-  );
+    `;
+
+  const rowsResult = pagination
+    ? await pool.query<ResultTableRow>(
+        `${baseQuery}
+        LIMIT $1 OFFSET $2
+        `,
+        [pagination.limit, pagination.offset]
+      )
+    : await pool.query<ResultTableRow>(baseQuery);
 
   return buildTableResponse(rowsResult.rows, total, pagination);
 };
