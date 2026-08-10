@@ -11,12 +11,12 @@ import { env } from "./config/env";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
 });
 
 const sensitiveLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 300,
   handler: (req, res, _next, options) => {
     console.warn("badges fetch failed: rate limit exceeded", {
       path: req.path,
