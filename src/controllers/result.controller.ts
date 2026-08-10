@@ -27,6 +27,39 @@ let communityStatsCache:
     }
   | null = null;
 
+const buildRequestContext = (req: Request) => ({
+  ip: req.ip,
+  forwardedFor: req.headers["x-forwarded-for"],
+  origin: req.headers.origin,
+  userAgent: req.headers["user-agent"],
+});
+
+const buildSubmitRecoveryPayload = (body: Record<string, any>) => ({
+  // Keep enough data to identify and manually recover a failed badge without logging full assessment text.
+  firstName: body.firstName ?? null,
+  lastName: body.lastName ?? null,
+  email: body.email ?? null,
+  employmentStatus: body.employmentStatus ?? null,
+  currentJobTitle: body.currentJobTitle ?? body.jobTitle ?? null,
+  currentCountry: body.currentCountry ?? null,
+  badge: body.badge ?? null,
+  score: body.score ?? null,
+  maxScore: body.maxScore ?? null,
+  hasReason: Boolean(body.reason),
+  answersCount: body.answers && typeof body.answers === "object" ? Object.keys(body.answers).length : 0,
+  hasOpenText: Boolean(body.openText),
+  honestyConfirmed: body.honestyConfirmed ?? null,
+  intentKeys: body.intent && typeof body.intent === "object"
+    ? Object.entries(body.intent)
+        .filter(([, value]) => value === true)
+        .map(([key]) => key)
+    : [],
+  rawScore: body.rawScore ?? null,
+  adjustedScore: body.adjustedScore ?? null,
+  aiValidationLevel: body.aiValidation?.level ?? null,
+  aiValidationScoreModifier: body.aiValidation?.scoreModifier ?? null,
+});
+
 export const submitResults = async (req: Request, res: Response) => {
   /*
   return res.status(200).json({
@@ -297,6 +330,11 @@ export const submitResults = async (req: Request, res: Response) => {
 
     return;
   } catch (error) {
+    console.error("proceso interrumpido: submitResults failed before result registration", {
+      request: buildRequestContext(req),
+      recoveryPayload: buildSubmitRecoveryPayload(req.body as Record<string, any>),
+      error,
+    });
     console.error("submitResults error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
@@ -307,6 +345,9 @@ export const getUserBadges = async (req: Request, res: Response) => {
     const { email } = req.query as { email?: string };
 
     if (!email) {
+      console.warn("badges fetch failed: missing email", {
+        request: buildRequestContext(req),
+      });
       return res.status(400).json({ message: "email is required" });
     }
 
@@ -334,6 +375,11 @@ export const getUserBadges = async (req: Request, res: Response) => {
       data: result.rows,
     });
   } catch (error) {
+    console.error("badges fetch failed: getUserBadges error", {
+      request: buildRequestContext(req),
+      email: req.query.email,
+      error,
+    });
     console.error("getUserBadges error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }

@@ -17,6 +17,19 @@ const limiter = rateLimit({
 const sensitiveLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
+  handler: (req, res, _next, options) => {
+    console.warn("badges fetch failed: rate limit exceeded", {
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+      forwardedFor: req.headers["x-forwarded-for"],
+      origin: req.headers.origin,
+      userAgent: req.headers["user-agent"],
+      rateLimit: (req as typeof req & { rateLimit?: unknown }).rateLimit,
+    });
+
+    return res.status(options.statusCode).send(options.message);
+  },
 });
 
 
